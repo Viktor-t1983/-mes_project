@@ -6,7 +6,7 @@ from src.models.base import Base
 from src.models.project import Project
 from src.models.operation import Operation
 
-app = FastAPI(title="MES-X Test API")
+app = FastAPI(title="MES-X Test API Fixed")
 
 @app.on_event("startup")
 async def startup():
@@ -32,17 +32,13 @@ async def get_simple_projects(db: AsyncSession = Depends(get_db)):
 async def create_simple_operation(
     name: str,
     description: str, 
-    operation_type: str = "machining",
-    duration_minutes: int = 60,
-    cost: float = 0.0,
     db: AsyncSession = Depends(get_db)
 ):
+    # Используем только те поля, которые есть в модели Operation
     operation = Operation(
         name=name,
-        description=description,
-        operation_type=operation_type,
-        duration_minutes=duration_minutes,
-        cost=cost
+        description=description
+        # Добавляем только существующие поля из модели
     )
     db.add(operation)
     await db.commit()
@@ -57,4 +53,4 @@ async def get_simple_operations(db: AsyncSession = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

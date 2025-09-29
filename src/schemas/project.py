@@ -4,8 +4,7 @@ from typing import Optional
 
 class ProjectBase(BaseModel):
     name: str
-    description: str
-    status: str = "planning"
+    description: Optional[str] = None
 
 class ProjectCreate(ProjectBase):
     pass
@@ -17,8 +16,9 @@ class ProjectUpdate(BaseModel):
 
 class Project(ProjectBase):
     id: int
+    status: str
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
