@@ -1,21 +1,20 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
-from dotenv import load_dotenv
-import os
+from sqlalchemy.ext.declarative import declarative_base
+from .config import settings
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_async_engine(DATABASE_URL, echo=True)
-AsyncSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    class_=AsyncSession
+# Создаем синхронный движок с psycopg2
+engine = create_engine(
+    settings.DATABASE_URL,
+    echo=True,
+    future=True
 )
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
