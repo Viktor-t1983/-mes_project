@@ -2,30 +2,58 @@ from fastapi import FastAPI
 from src.core.database import engine
 from src.models import Base
 
+# Импортируем все роутеры
+from src.api import (
+    employees_router,
+    manufacturing_orders_router,
+    operations_router,
+    defect_reports_router,
+    warehouse_items_router,
+    incentives_router
+)
+
 # Создаем таблицы (если их нет)
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="MES System API",
-    description="Manufacturing Execution System API",
-    version="1.0.0"
+    description="Manufacturing Execution System API - Complete MES solution",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
+
+# Подключаем все роутеры
+app.include_router(employees_router)
+app.include_router(manufacturing_orders_router)
+app.include_router(operations_router)
+app.include_router(defect_reports_router)
+app.include_router(warehouse_items_router)
+app.include_router(incentives_router)
 
 @app.get("/")
 def read_root():
-    return {"message": "MES System API is running on port 8001!"}
+    return {
+        "message": "MES System API is running!",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "modules": [
+            "employees", 
+            "manufacturing-orders", 
+            "operations", 
+            "defect-reports", 
+            "warehouse-items", 
+            "incentives"
+        ]
+    }
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "port": 8001, "database": "connected"}
-
-@app.get("/test")
-def test_endpoint():
-    return {"test": "success", "data": "API is working with database!"}
-
-# Подключаем роутеры
-from src.api.employees import router as employees_router
-app.include_router(employees_router)
+    return {
+        "status": "healthy", 
+        "database": "connected",
+        "modules": 6
+    }
 
 if __name__ == "__main__":
     import uvicorn
