@@ -9,12 +9,11 @@ class Employee(Base):
     qr_code = Column(String(100), unique=True, index=True, nullable=False)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
-    position = Column(String(100), nullable=False)  # Должность
-    department = Column(String(100), nullable=False)  # Отдел
-    qualifications = Column(Text)  # Квалификации и допуски
+    role = Column(String(100), nullable=False)  # Роль: operator, master, inspector
+    allowed_workcenters = Column(Text)  # JSON: ["cnc1", "laser2"]
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
     def __repr__(self):
-        return f"<Employee {self.first_name} {self.last_name} ({self.position})>"
+        return f"<Employee {self.first_name} {self.last_name} ({self.role})>"
