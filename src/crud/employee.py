@@ -20,9 +20,8 @@ def create_employee(db: Session, employee: EmployeeCreate):
         qr_code=employee.qr_code,
         first_name=employee.first_name,
         last_name=employee.last_name,
-        position=employee.position,
-        department=employee.department,
-        qualifications=employee.qualifications,
+        role=employee.role,  # ← ИСПРАВЛЕНО: position → role
+        allowed_workcenters=employee.allowed_workcenters,  # ← ДОБАВЛЕНО
         is_active=employee.is_active
     )
     db.add(db_employee)

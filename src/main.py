@@ -24,12 +24,12 @@ app = FastAPI(
 )
 
 # Подключаем все роутеры
-app.include_router(employees_router)
-app.include_router(manufacturing_orders_router)
-app.include_router(operations_router)
-app.include_router(defect_reports_router)
-app.include_router(warehouse_items_router)
-app.include_router(incentives_router)
+app.include_router(employees_router, prefix="/api/v1", tags=["employees"])
+app.include_router(manufacturing_orders_router, prefix="/api/v1", tags=["manufacturing-orders"])
+app.include_router(operations_router, prefix="/api/v1", tags=["operations"])
+app.include_router(defect_reports_router, prefix="/api/v1", tags=["defect-reports"])
+app.include_router(warehouse_items_router, prefix="/api/v1", tags=["warehouse-items"])
+app.include_router(incentives_router, prefix="/api/v1", tags=["incentives"])
 
 @app.get("/")
 def read_root():

@@ -12,7 +12,12 @@ class EmployeeBase(BaseModel):
     is_active: bool = True
 
 class EmployeeCreate(EmployeeBase):
-    pass
+    def model_dump(self, **kwargs):
+        data = super().model_dump(**kwargs)
+        # Преобразуем список в JSON строку для БД
+        if isinstance(data.get('allowed_workcenters'), list):
+            data['allowed_workcenters'] = json.dumps(data['allowed_workcenters'], ensure_ascii=False)
+        return data
 
 class EmployeeUpdate(BaseModel):
     first_name: Optional[str] = None
