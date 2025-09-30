@@ -4,6 +4,7 @@ from src.models import Base
 
 # Импортируем все роутеры
 from src.api import (
+    qr_codes_router,
     employees_router,
     manufacturing_orders_router,
     operations_router,
@@ -30,6 +31,7 @@ app.include_router(operations_router, prefix="/api/v1", tags=["operations"])
 app.include_router(defect_reports_router, prefix="/api/v1", tags=["defect-reports"])
 app.include_router(warehouse_items_router, prefix="/api/v1", tags=["warehouse-items"])
 app.include_router(incentives_router, prefix="/api/v1", tags=["incentives"])
+app.include_router(qr_codes_router, prefix="/api/v1", tags=["qr-codes"])
 
 @app.get("/")
 def read_root():

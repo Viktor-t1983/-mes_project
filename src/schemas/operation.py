@@ -60,3 +60,7 @@ class Operation(OperationBase):
     quality_check_passed: Optional[bool] = None
     created_at: datetime
     
+
+class OperationPause(BaseModel):
+    operation_id: int
+    reason: str
