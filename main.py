@@ -9,16 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from src.database import get_db, engine, Base
-from src.models.employee import Employee
-from src.models.manufacturing_order import ManufacturingOrder
-from src.models.operation import Operation
-from src.models.defect_report import DefectReport
-from src.models.order import Order
-from src.models.project import Project
-
-# Создаем простые схемы напрямую чтобы избежать проблем с импортом
-from pydantic import BaseModel
+from src.database import get_db, engine, Base\nfrom src.models.employee import Employee\nfrom src.models.manufacturing_order import ManufacturingOrder\nfrom src.models.operation import Operation\nfrom src.models.defect_report import DefectReport\nfrom src.models.order import Order\nfrom src.models.project import Project\nfrom pydantic import BaseModel
 
 class EmployeeCreate(BaseModel):
     first_name: str
