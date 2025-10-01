@@ -1,27 +1,23 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Numeric
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
-from . import Base
+from src.core.database import Base
 
 class DefectReport(Base):
     __tablename__ = "defect_reports"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    manufacturing_order_id = Column(Integer, ForeignKey("manufacturing_orders.id"), nullable=False)
+    manufacturing_order_id = Column(Integer, ForeignKey("manufacturing_orders.id"))
     operation_id = Column(Integer, ForeignKey("operations.id"))
-    reported_by = Column(Integer, ForeignKey("employees.id"), nullable=False)
-    defect_type = Column(String(100), nullable=False)
-    defect_description = Column(Text, nullable=False)
-    severity = Column(String(20), default="medium")
-    quantity_affected = Column(Integer, default=1)
+    reported_by = Column(Integer, ForeignKey("employees.id"))
+    defect_type = Column(String(100))
+    defect_description = Column(Text)
+    severity = Column(String(20))
+    quantity_affected = Column(Integer)
     corrective_action = Column(Text)
-    status = Column(String(50), default="reported")
+    status = Column(String(20), default="open")
     resolved_at = Column(DateTime(timezone=True))
     resolved_by = Column(Integer, ForeignKey("employees.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    manufacturing_order = relationship("ManufacturingOrder", back_populates="defect_reports")
-    operation = relationship("Operation", back_populates="defect_reports")
-    
+
     def __repr__(self):
-        return f"<DefectReport {self.defect_type} - {self.severity}>"
+        return f"<DefectReport {self.id} - {self.defect_type}>"

@@ -1,19 +1,19 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, JSON, DateTime
 from sqlalchemy.sql import func
-from . import Base
+from src.core.database import Base
 
 class Employee(Base):
     __tablename__ = "employees"
-    
+
     id = Column(Integer, primary_key=True, index=True)
-    qr_code = Column(String(100), unique=True, index=True, nullable=False)
-    first_name = Column(String(100), nullable=False)
-    last_name = Column(String(100), nullable=False)
-    role = Column(String(100), nullable=False)  # Роль: operator, master, inspector
-    allowed_workcenters = Column(Text)  # JSON: ["cnc1", "laser2"]
+    qr_code = Column(String, unique=True, index=True)
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    role = Column(String)
+    allowed_workcenters = Column(JSON, default=list)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+
     def __repr__(self):
-        return f"<Employee {self.first_name} {self.last_name} ({self.role})>"
+        return f"<Employee {self.first_name} {self.last_name} - {self.role}>"

@@ -1,23 +1,31 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from .config import settings
+import os
+from dotenv import load_dotenv
 
-# Создаем асинхронный движок с asyncpg драйвером
-engine = create_async_engine(
-    settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"),
-    echo=True,
-    future=True
-)
+load_dotenv()
 
-AsyncSessionLocal = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
-)
+# Используем синхронное подключение для SQLAlchemy
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+if "asyncpg" in DATABASE_URL:
+    # Заменяем asyncpg на psycopg2 для синхронной работы
+    DATABASE_URL = DATABASE_URL.replace("asyncpg", "psycopg2")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL not found in environment variables")
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+print("✅ Synchronous database configuration created")
+print(f"Database URL: {DATABASE_URL}")

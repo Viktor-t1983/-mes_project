@@ -1,210 +1,351 @@
 from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from src.core.database import engine, get_db
-from src.models.base import Base
+from sqlalchemy.orm import Session
+from typing import List
+import os
+import sys
+import uuid
+from sqlalchemy.exc import IntegrityError
 
-# Импорт всех моделей для создания таблиц
-from src.models.project import Project
-from src.models.operation import Operation
-from src.models.order import Order
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from src.database import get_db, engine, Base
 from src.models.employee import Employee
 from src.models.manufacturing_order import ManufacturingOrder
+from src.models.operation import Operation
 from src.models.defect_report import DefectReport
-from src.models.warehouse_item import WarehouseItem
-from src.models.incentive import Incentive
+from src.models.order import Order
+from src.models.project import Project
 
-app = FastAPI(
-    title="MES-X v4.0",
-    description="Система управления производством для несерийного производства",
-    version="0.1.0"
-)
+# Создаем простые схемы напрямую чтобы избежать проблем с импортом
+from pydantic import BaseModel
 
-@app.on_event("startup")
-async def startup():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+class EmployeeCreate(BaseModel):
+    first_name: str
+    last_name: str
+    role: str
+    qr_code: str = None
 
-# ========== MANUFACTURING ORDERS ==========
-@app.post("/api/v1/mo")
-async def create_manufacturing_order(
-    order_number: str,
-    product_name: str,
-    product_code: str,
-    quantity: int,
-    db: AsyncSession = Depends(get_db)
-):
-    mo = ManufacturingOrder(
-        order_number=order_number,
-        product_name=product_name,
-        product_code=product_code,
-        quantity=quantity,
-        status="created"
-    )
-    db.add(mo)
-    await db.commit()
-    await db.refresh(mo)
-    return {"message": "Производственное задание создано", "id": mo.id}
+class EmployeeSchema(EmployeeCreate):
+    id: int
+    is_active: bool = True
 
-@app.get("/api/v1/mo")
-async def get_manufacturing_orders(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(ManufacturingOrder))
-    orders = result.scalars().all()
-    return orders
+class OrderCreate(BaseModel):
+    name: str = "Default Order"
+    description: str = "Default description"
+    product_name: str
+    quantity: int
 
-# ========== OPERATIONS ==========
-@app.post("/api/v1/operations")
-async def create_operation(
-    manufacturing_order_id: int,
-    operation_number: str,
-    name: str,
-    description: str = "",
-    db: AsyncSession = Depends(get_db)
-):
-    operation = Operation(
-        manufacturing_order_id=manufacturing_order_id,
-        operation_number=operation_number,
-        name=name,
-        description=description,
-        status="pending"
-    )
-    db.add(operation)
-    await db.commit()
-    await db.refresh(operation)
-    return {"message": "Операция создана", "id": operation.id}
+class OrderSchema(OrderCreate):
+    id: int
+    status: str = "created"
 
-@app.get("/api/v1/operations")
-async def get_operations(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Operation))
-    operations = result.scalars().all()
-    return operations
+class ManufacturingOrderCreate(BaseModel):
+    order_number: str = None
+    product_name: str
+    product_code: str = "PROD-DEFAULT"
+    quantity: int
 
-@app.post("/api/v1/operations/start")
-async def start_operation(
-    operation_id: int,
-    employee_id: int,
-    db: AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(Operation).where(Operation.id == operation_id))
-    operation = result.scalar_one_or_none()
+class ManufacturingOrderSchema(ManufacturingOrderCreate):
+    id: int
+    status: str = "planned"
+
+class OperationCreate(BaseModel):
+    manufacturing_order_id: int = 1
+    operation_number: str = None
+    name: str
+    description: str
+    planned_duration: int = 60
+
+class OperationSchema(OperationCreate):
+    id: int
+    status: str = "pending"
+
+class OperationAction(BaseModel):
+    operation_id: int
+
+class DefectReportCreate(BaseModel):
+    manufacturing_order_id: int = 1
+    reported_by: int = 1
+    defect_type: str
+    defect_description: str
+    severity: str
+
+class DefectReportSchema(DefectReportCreate):
+    id: int
+    status: str = "reported"
+
+class ProjectCreate(BaseModel):
+    name: str
+    description: str
+
+class ProjectSchema(ProjectCreate):
+    id: int
+    status: str = "active"
+
+# QR code generator
+def generate_qr_code(data: str):
+    from fastapi.responses import Response
+    import qrcode
+    from io import BytesIO
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    img_buffer = BytesIO()
+    img.save(img_buffer, format="PNG")
+    img_buffer.seek(0)
+    return Response(content=img_buffer.getvalue(), media_type="image/png")
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="MES System", version="1.0.0")
+
+def generate_unique_qr_code():
+    """Generate unique QR code for employees"""
+    return f"EMP-{uuid.uuid4().hex[:8].upper()}"
+
+def generate_unique_order_number():
+    """Generate unique order number for manufacturing orders"""
+    return f"MO-{uuid.uuid4().hex[:6].upper()}"
+
+def generate_unique_operation_number():
+    """Generate unique operation number"""
+    return f"OP-{uuid.uuid4().hex[:6].upper()}"
+
+# ========== ROOT & HEALTH ==========
+@app.get("/")
+async def root():
+    return {"message": "MES System API"}
+
+@app.get("/api/v1/health")
+async def health_check():
+    return {"status": "healthy", "message": "MES System is running"}
+
+# ========== EMPLOYEE ENDPOINTS ==========
+@app.get("/api/v1/employees", response_model=List[EmployeeSchema])
+def get_employees(db: Session = Depends(get_db)):
+    """Get all employees"""
+    return db.query(Employee).all()
+
+@app.post("/api/v1/employees", response_model=EmployeeSchema)
+def create_employee(employee: EmployeeCreate, db: Session = Depends(get_db)):
+    """Create new employee"""
+    # Генерируем уникальный QR код если не предоставлен
+    qr_code = employee.qr_code or generate_unique_qr_code()
     
-    if not operation:
-        raise HTTPException(status_code=404, detail="Операция не найдена")
-    
-    operation.status = "in_progress"
-    operation.assigned_employee_id = employee_id
-    await db.commit()
-    
-    return {"message": f"Операция {operation_id} запущена сотрудником {employee_id}", "status": "started"}
-
-# ========== ORDERS ==========
-@app.post("/api/v1/orders")
-async def create_order(
-    product_name: str,
-    quantity: int,
-    db: AsyncSession = Depends(get_db)
-):
-    order = Order(
-        product_name=product_name,
-        quantity=quantity,
-        status="created"
-    )
-    db.add(order)
-    await db.commit()
-    await db.refresh(order)
-    return {"message": "Заказ создан", "id": order.id}
-
-@app.get("/api/v1/orders")
-async def get_orders(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order))
-    orders = result.scalars().all()
-    return orders
-
-# ========== PROJECTS ==========
-@app.post("/api/v1/projects")
-async def create_project(
-    name: str,
-    description: str = "",
-    db: AsyncSession = Depends(get_db)
-):
-    project = Project(
-        name=name,
-        description=description
-    )
-    db.add(project)
-    await db.commit()
-    await db.refresh(project)
-    return {"message": "Проект создан", "id": project.id}
-
-@app.get("/api/v1/projects")
-async def get_projects(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Project))
-    projects = result.scalars().all()
-    return projects
-
-# ========== EMPLOYEES ==========
-@app.post("/api/v1/employees")
-async def create_employee(
-    first_name: str,
-    last_name: str,
-    role: str,
-    db: AsyncSession = Depends(get_db)
-):
-    # Генерируем QR код на основе имени и фамилии
-    qr_code = f"EMP{first_name[0]}{last_name}".upper()
-    
-    employee = Employee(
-        first_name=first_name,
-        last_name=last_name,
-        role=role,
+    db_employee = Employee(
+        first_name=employee.first_name,
+        last_name=employee.last_name,
+        role=employee.role,
         qr_code=qr_code,
         is_active=True
     )
-    db.add(employee)
-    await db.commit()
-    await db.refresh(employee)
-    return {"message": "Сотрудник создан", "id": employee.id}
-
-@app.get("/api/v1/employees")
-async def get_employees(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Employee))
-    employees = result.scalars().all()
-    return employees
-
-# ========== QR CODES ==========
-@app.get("/api/v1/qr/order/{order_id}")
-async def get_order_qr(order_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Order).where(Order.id == order_id))
-    order = result.scalar_one_or_none()
     
-    if not order:
-        raise HTTPException(status_code=404, detail="Заказ не найден")
-    
-    return {"message": f"QR-код для заказа {order_id}", "qr_data": f"order_{order_id}"}
+    try:
+        db.add(db_employee)
+        db.commit()
+        db.refresh(db_employee)
+        return db_employee
+    except IntegrityError:
+        db.rollback()
+        # Если ошибка из-за дубликата QR кода, генерируем новый
+        qr_code = generate_unique_qr_code()
+        db_employee.qr_code = qr_code
+        db.add(db_employee)
+        db.commit()
+        db.refresh(db_employee)
+        return db_employee
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating employee: {str(e)}")
 
-# ========== DEFECTS ==========
-@app.post("/api/v1/defects")
-async def create_defect_report(
-    operation_id: int,
-    description: str,
-    defect_type: str = "качество",
-    db: AsyncSession = Depends(get_db)
-):
-    defect = DefectReport(
-        operation_id=operation_id,
-        description=description,
-        defect_type=defect_type
+# ========== ORDER ENDPOINTS ==========
+@app.get("/api/v1/orders", response_model=List[OrderSchema])
+def get_orders(db: Session = Depends(get_db)):
+    """Get all orders"""
+    return db.query(Order).all()
+
+@app.post("/api/v1/orders", response_model=OrderSchema)
+def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    """Create new order"""
+    db_order = Order(
+        name=order.name,
+        description=order.description,
+        product_name=order.product_name,
+        quantity=order.quantity,
+        status="created"
     )
-    db.add(defect)
-    await db.commit()
-    await db.refresh(defect)
-    return {"message": "Брак зарегистрирован", "id": defect.id}
+    db.add(db_order)
+    db.commit()
+    db.refresh(db_order)
+    return db_order
 
-@app.get("/api/v1/defects")
-async def get_defects(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DefectReport))
-    defects = result.scalars().all()
-    return defects
+# ========== MANUFACTURING ORDER ENDPOINTS ==========
+@app.get("/api/v1/mo", response_model=List[ManufacturingOrderSchema])
+def get_manufacturing_orders(db: Session = Depends(get_db)):
+    """Get all manufacturing orders"""
+    return db.query(ManufacturingOrder).all()
+
+@app.post("/api/v1/mo", response_model=ManufacturingOrderSchema)
+def create_manufacturing_order(mo: ManufacturingOrderCreate, db: Session = Depends(get_db)):
+    """Create new manufacturing order"""
+    # Генерируем уникальный order_number если не предоставлен
+    order_number = mo.order_number or generate_unique_order_number()
+    
+    db_mo = ManufacturingOrder(
+        order_number=order_number,
+        product_name=mo.product_name,
+        product_code=mo.product_code,
+        quantity=mo.quantity,
+        status="planned"
+    )
+    
+    try:
+        db.add(db_mo)
+        db.commit()
+        db.refresh(db_mo)
+        return db_mo
+    except IntegrityError:
+        db.rollback()
+        # Если ошибка из-за дубликата order_number, генерируем новый
+        order_number = generate_unique_order_number()
+        db_mo.order_number = order_number
+        db.add(db_mo)
+        db.commit()
+        db.refresh(db_mo)
+        return db_mo
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating manufacturing order: {str(e)}")
+
+# ========== OPERATION ENDPOINTS ==========
+@app.get("/api/v1/operations", response_model=List[OperationSchema])
+def get_operations(db: Session = Depends(get_db)):
+    """Get all operations"""
+    return db.query(Operation).all()
+
+@app.post("/api/v1/operations", response_model=OperationSchema)
+def create_operation(operation: OperationCreate, db: Session = Depends(get_db)):
+    """Create new operation"""
+    # Генерируем уникальный operation_number если не предоставлен
+    operation_number = operation.operation_number or generate_unique_operation_number()
+    
+    db_operation = Operation(
+        manufacturing_order_id=operation.manufacturing_order_id,
+        operation_number=operation_number,
+        name=operation.name,
+        description=operation.description,
+        planned_duration=operation.planned_duration,
+        status="pending"
+    )
+    
+    try:
+        db.add(db_operation)
+        db.commit()
+        db.refresh(db_operation)
+        return db_operation
+    except IntegrityError:
+        db.rollback()
+        # Если ошибка из-за дубликата operation_number, генерируем новый
+        operation_number = generate_unique_operation_number()
+        db_operation.operation_number = operation_number
+        db.add(db_operation)
+        db.commit()
+        db.refresh(db_operation)
+        return db_operation
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating operation: {str(e)}")
+
+@app.post("/api/v1/operations/start")
+def start_operation(action: OperationAction, db: Session = Depends(get_db)):
+    """Start operation"""
+    operation = db.query(Operation).filter(Operation.id == action.operation_id).first()
+    if not operation:
+        raise HTTPException(status_code=404, detail="Operation not found")
+    operation.status = "in_progress"
+    db.commit()
+    return {"message": "Operation started", "operation_id": action.operation_id}
+
+@app.post("/api/v1/operations/pause")
+def pause_operation(action: OperationAction, db: Session = Depends(get_db)):
+    """Pause operation"""
+    operation = db.query(Operation).filter(Operation.id == action.operation_id).first()
+    if not operation:
+        raise HTTPException(status_code=404, detail="Operation not found")
+    operation.status = "paused"
+    db.commit()
+    return {"message": "Operation paused", "operation_id": action.operation_id}
+
+@app.post("/api/v1/operations/complete")
+def complete_operation(action: OperationAction, db: Session = Depends(get_db)):
+    """Complete operation"""
+    operation = db.query(Operation).filter(Operation.id == action.operation_id).first()
+    if not operation:
+        raise HTTPException(status_code=404, detail="Operation not found")
+    operation.status = "completed"
+    db.commit()
+    return {"message": "Operation completed", "operation_id": action.operation_id}
+
+# ========== DEFECT REPORT ENDPOINTS ==========
+@app.get("/api/v1/defects", response_model=List[DefectReportSchema])
+def get_defect_reports(db: Session = Depends(get_db)):
+    """Get all defect reports"""
+    return db.query(DefectReport).all()
+
+@app.post("/api/v1/defects", response_model=DefectReportSchema)
+def create_defect_report(defect: DefectReportCreate, db: Session = Depends(get_db)):
+    """Create new defect report"""
+    db_defect = DefectReport(
+        manufacturing_order_id=defect.manufacturing_order_id,
+        reported_by=defect.reported_by,
+        defect_type=defect.defect_type,
+        defect_description=defect.defect_description,
+        severity=defect.severity,
+        status="reported"
+    )
+    db.add(db_defect)
+    db.commit()
+    db.refresh(db_defect)
+    return db_defect
+
+# ========== PROJECT ENDPOINTS ==========
+@app.get("/api/v1/projects", response_model=List[ProjectSchema])
+def get_projects(db: Session = Depends(get_db)):
+    """Get all projects"""
+    return db.query(Project).all()
+
+@app.post("/api/v1/projects", response_model=ProjectSchema)
+def create_project(project: ProjectCreate, db: Session = Depends(get_db)):
+    """Create new project"""
+    db_project = Project(
+        name=project.name,
+        description=project.description,
+        status="active"
+    )
+    db.add(db_project)
+    db.commit()
+    db.refresh(db_project)
+    return db_project
+
+# ========== QR CODE ENDPOINTS ==========
+@app.get("/api/v1/qr/order/{order_id}")
+def get_order_qr(order_id: int):
+    """Generate QR code for order"""
+    qr_data = f"ORDER:{order_id}"
+    return generate_qr_code(qr_data)
+
+@app.get("/api/v1/qr/employee/{employee_id}")
+def get_employee_qr(employee_id: int):
+    """Generate QR code for employee"""
+    qr_data = f"EMPLOYEE:{employee_id}"
+    return generate_qr_code(qr_data)
+
+@app.get("/api/v1/qr/mo/{mo_id}")
+def get_mo_qr(mo_id: int):
+    """Generate QR code for manufacturing order"""
+    qr_data = f"MANUFACTURING_ORDER:{mo_id}"
+    return generate_qr_code(qr_data)
 
 if __name__ == "__main__":
     import uvicorn
