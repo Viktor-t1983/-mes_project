@@ -16,8 +16,6 @@ from src.models.operation import Operation
 from src.models.defect_report import DefectReport
 from src.models.order import Order
 from src.models.project import Project
-from src.models.manufacturing_order import ManufacturingOrder
-from src.models.defect_report import DefectReport
 
 # Создаем простые схемы напрямую чтобы избежать проблем с импортом
 from pydantic import BaseModel
