@@ -41,3 +41,10 @@ source venv/Scripts/activate
 # Запустить сервер
 uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
 ```
+
+## 🚀 Quick Start
+1. Create database: `createdb mes_db`
+2. Copy environment: `cp .env.example .env`
+3. Install dependencies: `pip install -r requirements.txt`
+4. Run: `uvicorn main:app --reload`
+5. Open: http://localhost:8000/docs

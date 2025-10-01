@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException
+import os
+
+# Создаем правильный main.py без ошибок
+content = '''from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 import os
@@ -359,3 +362,10 @@ def get_mo_qr(mo_id: int):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+'''
+
+with open('main.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("✅ Исправленный main.py создан без ошибок")
+print("📊 Размер файла:", len(content), "символов")
