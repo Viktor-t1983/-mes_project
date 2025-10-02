@@ -17,3 +17,15 @@ class Employee(EmployeeBase):
 
     class Config:
         from_attributes = True
+
+
+class EmployeeUpdate(BaseModel):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    position: Optional[str] = None
+    department: Optional[str] = None
+    is_active: Optional[bool] = None
+    
+    class Config:
+        from_attributes = True
+

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from src.models.warehouse_item import WarehouseItem
-from src.schemas.warehouse_item import WarehouseItemCreate, WarehouseItemUpdate
+from src.schemas.warehouse_item import WarehouseItemCreate, WarehouseItemCreate
 
 def get_warehouse_item(db: Session, item_id: int):
     return db.query(WarehouseItem).filter(WarehouseItem.id == item_id).first()
@@ -35,7 +35,7 @@ def create_warehouse_item(db: Session, item: WarehouseItemCreate):
     db.refresh(db_item)
     return db_item
 
-def update_warehouse_item(db: Session, item_id: int, item: WarehouseItemUpdate):
+def update_warehouse_item(db: Session, item_id: int, item: WarehouseItemCreate):
     db_item = db.query(WarehouseItem).filter(WarehouseItem.id == item_id).first()
     if db_item:
         update_data = item.model_dump(exclude_unset=True)

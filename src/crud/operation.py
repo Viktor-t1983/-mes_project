@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from src.models.operation import Operation
-from src.schemas.operation import OperationCreate, OperationUpdate
+from src.schemas.operation import OperationCreate, OperationCreate
 
 def get_operation(db: Session, operation_id: int):
     return db.query(Operation).filter(Operation.id == operation_id).first()
@@ -32,7 +32,7 @@ def create_operation(db: Session, operation: OperationCreate):
     db.refresh(db_operation)
     return db_operation
 
-def update_operation(db: Session, operation_id: int, operation: OperationUpdate):
+def update_operation(db: Session, operation_id: int, operation: OperationCreate):
     db_operation = db.query(Operation).filter(Operation.id == operation_id).first()
     if db_operation:
         update_data = operation.model_dump(exclude_unset=True)

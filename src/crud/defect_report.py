@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from src.models.defect_report import DefectReport
-from src.schemas.defect_report import DefectReportCreate, DefectReportUpdate
+from src.schemas.defect_report import DefectReportCreate, DefectReportCreate
 
 def get_defect_report(db: Session, defect_id: int):
     return db.query(DefectReport).filter(DefectReport.id == defect_id).first()
@@ -36,7 +36,7 @@ def create_defect_report(db: Session, defect_report: DefectReportCreate):
     db.refresh(db_defect)
     return db_defect
 
-def update_defect_report(db: Session, defect_id: int, defect_report: DefectReportUpdate):
+def update_defect_report(db: Session, defect_id: int, defect_report: DefectReportCreate):
     db_defect = db.query(DefectReport).filter(DefectReport.id == defect_id).first()
     if db_defect:
         update_data = defect_report.model_dump(exclude_unset=True)

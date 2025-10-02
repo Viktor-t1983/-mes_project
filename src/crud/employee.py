@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from src.models.employee import Employee
-from src.schemas.employee import EmployeeCreate, EmployeeUpdate
+from src.schemas.employee import EmployeeCreate, EmployeeCreate
 
 def get_employee(db: Session, employee_id: int):
     return db.query(Employee).filter(Employee.id == employee_id).first()
@@ -29,7 +29,7 @@ def create_employee(db: Session, employee: EmployeeCreate):
     db.refresh(db_employee)
     return db_employee
 
-def update_employee(db: Session, employee_id: int, employee: EmployeeUpdate):
+def update_employee(db: Session, employee_id: int, employee: EmployeeCreate):
     db_employee = db.query(Employee).filter(Employee.id == employee_id).first()
     if db_employee:
         update_data = employee.model_dump(exclude_unset=True)

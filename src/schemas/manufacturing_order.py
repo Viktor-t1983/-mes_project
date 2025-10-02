@@ -1,19 +1,24 @@
-
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 class ManufacturingOrderBase(BaseModel):
-    order_number: str
     product_name: str
-    product_code: str
     quantity: int
+    status: str = "planned"
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
 
 class ManufacturingOrderCreate(ManufacturingOrderBase):
     pass
 
+class ManufacturingOrderUpdate(ManufacturingOrderBase):
+    product_name: Optional[str] = None
+    quantity: Optional[int] = None
+    status: Optional[str] = None
+
 class ManufacturingOrder(ManufacturingOrderBase):
     id: int
-    status: str = "planned"
-
+    
     class Config:
         from_attributes = True

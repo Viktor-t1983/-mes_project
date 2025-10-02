@@ -70,7 +70,7 @@ def complete_operation_endpoint(
 @router.post("/{operation_id}/pause", response_model=schemas.Operation)
 def pause_operation_endpoint(
     operation_id: int,
-    pause_data: OperationPause,
+    pause_data: dict,
     db: Session = Depends(get_db),
     current_employee: models.Employee = Depends(get_current_employee)
 ):

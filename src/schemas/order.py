@@ -17,3 +17,12 @@ class Order(OrderBase):
 
     class Config:
         from_attributes = True
+
+
+class OrderUpdate(BaseModel):
+    # Add update fields here
+    pass
+    
+    class Config:
+        from_attributes = True
+

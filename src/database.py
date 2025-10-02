@@ -9,7 +9,7 @@ load_dotenv()
 # Получаем URL базы данных из .env или используем значение по умолчанию
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:MesProject2025@localhost:5432/mes_db")
 
-print("✅ Synchronous database configuration created")
+print("[OK] Synchronous database configuration created")
 print(f"Database URL: {DATABASE_URL}")
 
 # Создаем синхронный engine

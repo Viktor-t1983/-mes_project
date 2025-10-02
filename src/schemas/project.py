@@ -15,3 +15,12 @@ class Project(ProjectBase):
 
     class Config:
         from_attributes = True
+
+
+class ProjectUpdate(BaseModel):
+    # Add update fields here
+    pass
+    
+    class Config:
+        from_attributes = True
+

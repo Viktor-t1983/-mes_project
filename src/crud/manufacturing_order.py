@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from src.models.manufacturing_order import ManufacturingOrder
-from src.schemas.manufacturing_order import ManufacturingOrderCreate, ManufacturingOrderUpdate
+from src.schemas.manufacturing_order import ManufacturingOrderCreate, ManufacturingOrderCreate
 
 def get_manufacturing_order(db: Session, order_id: int):
     return db.query(ManufacturingOrder).filter(ManufacturingOrder.id == order_id).first()
@@ -33,7 +33,7 @@ def create_manufacturing_order(db: Session, order: ManufacturingOrderCreate):
     db.refresh(db_order)
     return db_order
 
-def update_manufacturing_order(db: Session, order_id: int, order: ManufacturingOrderUpdate):
+def update_manufacturing_order(db: Session, order_id: int, order: ManufacturingOrderCreate):
     db_order = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == order_id).first()
     if db_order:
         update_data = order.model_dump(exclude_unset=True)

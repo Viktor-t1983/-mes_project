@@ -27,5 +27,5 @@ def get_db():
     finally:
         db.close()
 
-print("✅ Synchronous database configuration created")
+print("[OK] Synchronous database configuration created")
 print(f"Database URL: {DATABASE_URL}")
