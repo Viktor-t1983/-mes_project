@@ -1,17 +1,44 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from src.database import get_db
+import psutil
+import os
+from datetime import datetime
 
-router = APIRouter()
+router = APIRouter(tags=["Health"])
 
-# Health endpoints - без префикса, так как они уже в APIRouter
-@router.get('/api/v1/health')
-async def health_check():
-    return {'status': 'healthy', 'service': 'MES API', 'version': '1.0.0'}
+@router.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "healthy"
+    except:
+        db_status = "unhealthy"
+    
+    disk_usage = psutil.disk_usage("/")
+    disk_free_gb = disk_usage.free / (1024**3)
+    disk_status = "healthy" if disk_free_gb > 1.0 else "warning"
+    
+    memory = psutil.virtual_memory()
+    memory_status = "healthy" if memory.percent < 90 else "warning"
+    
+    overall_status = "healthy" if db_status == "healthy" else "unhealthy"
+    
+    return {
+        "status": overall_status,
+        "timestamp": datetime.now().isoformat(),
+        "services": {
+            "database": db_status,
+            "disk": disk_status,
+            "memory": memory_status
+        }
+    }
 
-@router.get('/api/v1/ready')
+@router.get("/ready")
 async def readiness_check():
-    return {'status': 'ready', 'database': 'connected', 'message': 'System is ready'}
+    return {"status": "ready"}
 
-@router.get('/api/v1/live')
+@router.get("/live")
 async def liveness_check():
-    import datetime
-    return {'status': 'live', 'timestamp': datetime.datetime.now().isoformat()}
+    return {"status": "live"}
