@@ -35,7 +35,6 @@ except ImportError as e:
 
 try:
     from src.api.mobile_api import router as mobile_router
-    app.include_router(mobile_router)
     print('[OK] Mobile router connected')
 except ImportError as e:
     print(f'[ERROR] Mobile router error: {e}')
