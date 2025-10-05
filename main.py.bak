@@ -53,18 +53,3 @@ if __name__ == '__main__':
     uvicorn.run(app, host='0.0.0.0', port=8000, reload=False)
 
 app.include_router(mobile_router)
-
-# День 6: IIoT и Аудит
-try:
-    from src.api.v1.iiot import router as iiot_router
-    app.include_router(iiot_router)
-    print("[OK] IIoT router connected")
-except Exception as e:
-    print(f"[ERROR] IIoT router: {e}")
-
-try:
-    from src.api.v1.audit import router as audit_router
-    app.include_router(audit_router)
-    print("[OK] Audit router connected")
-except Exception as e:
-    print(f"[ERROR] Audit router: {e}")

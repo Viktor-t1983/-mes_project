@@ -16,3 +16,4 @@ structlog==24.1.0
 slowapi==0.1.8
 
 
+psycopg2-binary==2.9.10
