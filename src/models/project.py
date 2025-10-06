@@ -1,16 +1,18 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
-from src.core.database import Base
+from sqlalchemy.orm import relationship  # ← Добавлен импорт
+from src.models.base import Base
 
 class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    description = Column(String)
-    status = Column(String, default="active")  # Добавлено недостающее поле
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    name = Column(String, unique=True, index=True, nullable=False)
+    description = Column(Text, nullable=True)
+    status = Column(String, default="planning", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    def __repr__(self):
-        return f"<Project {self.name}>"
+    # Связь с Order (опционально)
+    orders = relationship("Order", back_populates="project")

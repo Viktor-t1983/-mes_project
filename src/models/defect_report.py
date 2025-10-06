@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Numeric
 from sqlalchemy.sql import func
-from src.core.database import Base
+from src.models.base import Base
 
 class DefectReport(Base):
     __tablename__ = "defect_reports"

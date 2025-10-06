@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, JSON, DateTime
 from sqlalchemy.sql import func
-from src.core.database import Base
+from src.models.base import Base
 
 class Employee(Base):
     __tablename__ = "employees"
