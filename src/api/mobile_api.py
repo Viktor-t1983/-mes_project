@@ -1,35 +1,37 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+from src.core.database import get_db
+from src.models.employee import Employee
+from sqlalchemy import select
 
-from src.database import get_db
-from src.core.auth import require_role
-from src.core.logger import logger
+router = APIRouter(tags=["Mobile"])
 
-router = APIRouter(prefix="/mobile", tags=["Mobile API"])
+class ScanStartRequest(BaseModel):
+    qr_code: str
+    part_number: str
 
 @router.post("/scan-start")
-async def mobile_start(
-    qr_code: str,
-    employee_qr: str,
-    current_employee = Depends(require_role("operator")),  # Любой оператор (мобильный или с компа)
-    db: Session = Depends(get_db)
+async def scan_start(
+    request: ScanStartRequest,
+    db: AsyncSession = Depends(get_db)
 ):
-    """Начало операции — может вызываться с мобильного или с компа"""
-    logger.info(
-        "Operation start called",
-        employee_id=current_employee.id,
-        qr_code=qr_code,
-        employee_qr=employee_qr,
-        source="mobile_or_network"  # Универсальный источник
-    )
-    return {"status": "started", "operation_id": 123}
+    emp = await db.scalar(select(Employee).where(Employee.qr_code == request.qr_code))
+    if not emp:
+        raise HTTPException(status_code=404, detail="Оператор не найден")
 
-@router.get("/my-tasks/{employee_id}")
-async def get_employee_tasks(
-    employee_id: int,
-    current_employee = Depends(require_role("operator")),  # Любой оператор
-    db: Session = Depends(get_db)
-):
-    """Получение сменного задания — может вызываться с мобильного или с компа"""
-    logger.info("Get employee tasks called", employee_id=employee_id, source="mobile_or_network")
-    return [{"id": 1, "part": "Вал-123", "operation": "Токарная"}]
+    from src.services.lms_service import LMSService
+    has_auth = await LMSService.check_authorization(db, emp.id, "WC-DEFAULT", "default_op")
+
+    if not has_auth:
+        return {
+            "status": "requires_approval",
+            "message": "Требуется подтверждение мастера",
+            "operator_id": emp.id
+        }
+
+    return {
+        "status": "ok",
+        "operator": f"{emp.first_name} {emp.last_name}",
+        "part_number": request.part_number
+    }

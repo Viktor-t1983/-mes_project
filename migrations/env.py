@@ -12,6 +12,8 @@ from src.models.defect_report import DefectReport
 from src.models.machine import Machine
 from src.models.project import Project
 from src.models.meta_process import MetaProcess, MetaStep
+from src.models.lms import TrainingCourse, EmployeeTraining, Certificate, WorkcenterAuthorization
+from src.models.audit_log import AuditLog
 
 # this is the Alembic Config object
 config = context.config
