@@ -1,28 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Body, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 from src.core.database import get_db
-from src.services.lms_service import LMSService
-from src.schemas.lms import TrainingCourseCreate, TrainingCourse, Certificate, AuthorizationOverride
+from src.services.auth_service import AuthService
 
 router = APIRouter(prefix="/api/v1/lms", tags=["LMS"])
 
-@router.post("/courses", response_model=TrainingCourse, status_code=status.HTTP_201_CREATED)
-async def create_course(course: TrainingCourseCreate, db: AsyncSession = Depends(get_db)):
-    """Создание курса обучения"""
-    db_course = TrainingCourse(**course.model_dump())
-    db.add(db_course)
-    await db.commit()
-    await db.refresh(db_course)
-    return db_course
-
-@router.post("/complete", response_model=Certificate)
-async def complete_course(employee_id: int, course_id: int, db: AsyncSession = Depends(get_db)):
-    """Завершение курса и выдача сертификата"""
-    try:
-        cert = await LMSService.issue_certificate(db, employee_id, course_id)
-        return cert
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+class OverrideRequest(BaseModel):
+    master_qr_code: str
+    reason: str
 
 @router.get("/authorize")
 async def check_authorization(
@@ -32,22 +18,38 @@ async def check_authorization(
     db: AsyncSession = Depends(get_db)
 ):
     """Проверка допуска"""
+    from src.services.lms_service import LMSService
     has_auth = await LMSService.check_authorization(db, employee_id, workcenter_id, operation_type)
     return {"authorized": has_auth}
 
 @router.post("/override", status_code=status.HTTP_202_ACCEPTED)
 async def override_authorization(
-    override: AuthorizationOverride,
-    employee_id: int,
-    workcenter_id: str,
-    operation_type: str,
+    employee_id: int = Query(...),
+    workcenter_id: str = Query(...),
+    operation_type: str = Query(...),
+    override: OverrideRequest = Body(...),
     db: AsyncSession = Depends(get_db)
 ):
     """Подтверждение допуска мастером"""
-    success = await LMSService.override_authorization(
-        db, employee_id, workcenter_id, operation_type,
-        override.master_qr_code, override.reason
-    )
-    if not success:
-        raise HTTPException(status_code=403, detail="Мастер не найден или не имеет прав")
-    return {"status": "approved", "message": "Допуск временно разрешён"}
+    from src.models.employee import Employee
+    operator = await db.get(Employee, employee_id)
+    if not operator:
+        raise HTTPException(status_code=404, detail="Оператор не найден")
+
+    try:
+        _, master = await AuthService.confirm_override(
+            db=db,
+            operator_qr=operator.qr_code,
+            master_qr=override.master_qr_code,
+            reason=override.reason,
+            context={
+                "workcenter_id": workcenter_id,
+                "operation_type": operation_type,
+                "employee_id": employee_id
+            }
+        )
+    except HTTPException:
+        raise
+
+    # Убран вызов LMSService.override_authorization — всё уже в аудите
+    return {"status": "approved", "by_master": master.id}

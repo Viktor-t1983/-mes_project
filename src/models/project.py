@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship  # ← Добавлен импорт
-from src.models.base import Base
+from sqlalchemy.orm import relationship
+from .base import Base
 
 class Project(Base):
     __tablename__ = "projects"
@@ -14,5 +14,6 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Связь с Order (опционально)
+    # Relationships
     orders = relationship("Order", back_populates="project")
+    shipments = relationship("Shipment", back_populates="project")

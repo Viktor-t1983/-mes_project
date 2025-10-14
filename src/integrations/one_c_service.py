@@ -1,21 +1,31 @@
-import aiohttp
+import httpx
 import logging
+from src.core.config import settings
+
 logger = logging.getLogger(__name__)
 
-class OneCService:
-    def __init__(self, base_url: str):
-        self.base_url = base_url
-    
-    async def sync_invoice(self, invoice_data: dict):
+class OneCIntegrationService:
+    def __init__(self):
+        self.base_url = settings.ONE_C_BASE_URL or None
+        self.auth = (
+            settings.ONE_C_USERNAME or "",
+            settings.ONE_C_PASSWORD or ""
+        )
+
+    async def push_shipment_to_1c(self, shipment: dict) -> bool:
+        if not self.base_url:
+            logger.warning("1C integration disabled: ONE_C_BASE_URL not set")
+            return True
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.base_url}/api/v1/sync/invoice",
-                    json=invoice_data
-                ) as response:
-                    if response.status == 200:
-                        return {"status": "success", "message": "Invoice synced"}
-                    else:
-                        return {"status": "error", "message": f"1C error: {response.status}"}
+            async with httpx.AsyncClient(auth=self.auth, timeout=10.0) as client:
+                url = f"{self.base_url}/api/v1/shipments"
+                response = await client.post(
+                    url,
+                    json=shipment,
+                    headers={"Content-Type": "application/json"}
+                )
+                return response.status_code == 200
         except Exception as e:
-            return {"status": "error", "message": f"Network error: {e}"}
+            logger.error(f"1C shipment sync failed: {e}")
+            return False

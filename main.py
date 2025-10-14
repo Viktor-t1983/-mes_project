@@ -114,3 +114,31 @@ if __name__ == '__main__':
     import uvicorn
     print('🚀 Starting MES Day 8 Server on port 8000...')
     uvicorn.run(app, host='0.0.0.0', port=8000, reload=False)
+
+# Shipment router
+try:
+    from src.api.v1.shipment_api import router as shipment_router
+    app.include_router(shipment_router)
+    print("[OK] Shipment router connected")
+except Exception as e:
+    print(f"[ERROR] Shipment router: {e}")
+
+# Обработчик ошибок валидации
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import logging
+
+logger = logging.getLogger(__name__)
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    logger.error(f"Validation error: {exc}")
+    return JSONResponse(status_code=400, content={"detail": "Invalid JSON"})
+
+# Shipment router
+try:
+    from src.api.v1.shipment_api import router as shipment_router
+    app.include_router(shipment_router)
+    print("[OK] Shipment router connected")
+except Exception as e:
+    print(f"[ERROR] Shipment router: {e}")

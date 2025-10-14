@@ -1,6 +1,3 @@
-"""
-Integrations package for MES System
-"""
-from .one_c_service import OneCService, create_onec_service
+from .one_c_service import OneCIntegrationService
 
-__all__ = ["OneCService", "create_onec_service"]
+__all__ = ["OneCIntegrationService"]
