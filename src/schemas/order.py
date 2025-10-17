@@ -1,28 +1,20 @@
-
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 class OrderBase(BaseModel):
     name: str
-    description: str
     product_name: str
     quantity: int
+    project_id: int
 
 class OrderCreate(OrderBase):
     pass
 
-class Order(OrderBase):
+class OrderResponse(OrderBase):
     id: int
-    status: str = "created"
+    status: str
+    created_at: datetime
 
     class Config:
         from_attributes = True
-
-
-class OrderUpdate(BaseModel):
-    # Add update fields here
-    pass
-    
-    class Config:
-        from_attributes = True
-

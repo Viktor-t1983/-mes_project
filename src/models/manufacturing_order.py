@@ -5,15 +5,14 @@ from .base import Base
 
 class ManufacturingOrder(Base):
     __tablename__ = "manufacturing_orders"
-
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    order_id = Column(Integer, nullable=False)
     part_number = Column(String, nullable=False)
     status = Column(String, default="planned")
     current_operation_id = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
+    # Связи
+    project = relationship("Project", back_populates="manufacturing_orders")
     shipments = relationship("Shipment", back_populates="manufacturing_order")

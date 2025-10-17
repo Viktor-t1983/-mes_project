@@ -5,16 +5,15 @@ from datetime import datetime
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
-    status: Optional[str] = "planning"
+    status: str = "active"  # ← Обязательное поле со значением по умолчанию
 
 class ProjectCreate(ProjectBase):
     pass
 
-class Project(ProjectBase):
-    id: int  # ← Ключевое добавление
+class ProjectResponse(ProjectBase):
+    id: int
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

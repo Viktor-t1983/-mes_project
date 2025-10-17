@@ -1,15 +1,15 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 from datetime import datetime
+import hashlib
 
 class ShipmentBase(BaseModel):
     project_id: int
     manufacturing_order_id: int
     invoice_number: str
-    documents_from_1c: Optional[str] = None
 
 class ShipmentCreate(ShipmentBase):
-    pass
+    pass  # signature_hash генерируется автоматически
 
 class ShipmentConfirm(BaseModel):
     employee_qr: str
@@ -18,7 +18,7 @@ class ShipmentTransporterConfirm(BaseModel):
     transporter_qr: str
     tracking_number: str
 
-class Shipment(ShipmentBase):
+class ShipmentResponse(ShipmentBase):
     id: int
     status: str
     shipped_at: Optional[datetime]

@@ -11,6 +11,7 @@ from src.models.operation import Operation
 from src.models.defect_report import DefectReport
 from src.models.machine import Machine
 from src.models.project import Project
+from src.models.shipment import Shipment
 from src.models.meta_process import MetaProcess, MetaStep
 from src.models.lms import TrainingCourse, EmployeeTraining, Certificate, WorkcenterAuthorization
 from src.models.audit_log import AuditLog

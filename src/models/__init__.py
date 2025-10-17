@@ -18,3 +18,5 @@ __all__ = [
     'EmployeeAchievement', 
     'Leaderboard'
 ]
+from src.models.operation import Operation
+from src.models.offline_buffer import OfflineEvent

@@ -1,22 +1,20 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
 
-class OperationBase(BaseModel):
-    name: str
-    status: str = "pending"
-
-class OperationCreate(OperationBase):
-    pass
-
-class OperationUpdate(OperationBase):
-    name: Optional[str] = None
+class OperationStart(BaseModel):
+    employee_qr: str
+    part_number: str
+    workcenter_id: str
 
 class OperationPause(BaseModel):
+    operation_id: int
     reason: str
 
-class Operation(OperationBase):
-    id: int
-    
-    class Config:
-        from_attributes = True
+class OperationComplete(BaseModel):
+    operation_id: int
+    employee_qr: str
+
+class OperationResponse(BaseModel):
+    status: str
+    operation_id: Optional[int] = None
+    event_id: Optional[int] = None

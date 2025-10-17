@@ -6,23 +6,22 @@ logger = logging.getLogger(__name__)
 
 class OneCIntegrationService:
     def __init__(self):
-        self.base_url = settings.ONE_C_BASE_URL or None
+        self.base_url = settings.ONE_C_BASE_URL
         self.auth = (
-            settings.ONE_C_USERNAME or "",
-            settings.ONE_C_PASSWORD or ""
+            settings.ONE_C_USER,        # ← Используем ONE_C_USER
+            settings.ONE_C_PASSWORD
         )
 
-    async def push_shipment_to_1c(self, shipment: dict) -> bool:
+    async def push_shipment_to_1c(self, shipment_data: dict) -> bool:
         if not self.base_url:
-            logger.warning("1C integration disabled: ONE_C_BASE_URL not set")
-            return True
+            logger.warning("1C integration disabled")
+            return True  # считаем успешным, если не настроено
 
         try:
             async with httpx.AsyncClient(auth=self.auth, timeout=10.0) as client:
-                url = f"{self.base_url}/api/v1/shipments"
                 response = await client.post(
-                    url,
-                    json=shipment,
+                    f"{self.base_url}/api/v1/shipments",
+                    json=shipment_data,
                     headers={"Content-Type": "application/json"}
                 )
                 return response.status_code == 200

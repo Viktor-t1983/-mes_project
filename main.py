@@ -1,3 +1,5 @@
+import src.core.logging
+
 from fastapi import FastAPI
 import sys
 import os
@@ -11,6 +13,7 @@ from src.core.security import setup_security_middleware
 
 # Импорт моделей для Alembic
 from src.models.base import Base
+from src.models.shipment import Shipment
 from src.models.order import Order
 from src.models.employee import Employee
 from src.models.manufacturing_order import ManufacturingOrder
@@ -142,3 +145,52 @@ try:
     print("[OK] Shipment router connected")
 except Exception as e:
     print(f"[ERROR] Shipment router: {e}")
+
+# Day 10: Feedback API
+try:
+    from src.api.v1.feedback_api import router as feedback_router
+    app.include_router(feedback_router)
+    print("[OK] Feedback router connected")
+except Exception as e:
+    print(f"[ERROR] Feedback router: {e}")
+
+# === Day 10: Background Sync Worker (DISABLED) ===
+# import asyncio
+# from src.services.sync_service import retry_sync_queue
+
+# @app.on_event("startup")
+# async def start_sync_worker():
+    """Запускает фоновую задачу для повторной отправки в 1С каждые 30 секунд"""
+#    asyncio.create_task(retry_sync_queue())
+
+# Day 11: Mobile API
+try:
+    from src.api.v1.mobile_api import router as mobile_router
+    app.include_router(mobile_router)
+    print("[OK] Mobile router connected")
+except Exception as e:
+    print(f"[ERROR] Mobile router: {e}")
+
+# Day 12: Integration Health
+try:
+    from src.api.v1.integration_health import router as integration_health_router
+    app.include_router(integration_health_router)
+    print("[OK] Integration health router connected")
+except Exception as e:
+    print(f"[ERROR] Integration health router: {e}")
+
+# Day 13: Analytics
+try:
+    from src.api.v1.analytics import router as analytics_router
+    app.include_router(analytics_router)
+    print("[OK] Analytics router connected")
+except Exception as e:
+    print(f"[ERROR] Analytics router: {e}")
+
+# Manufacturing Order router
+try:
+    from src.api.v1.manufacturing_order_api import router as mo_router
+    app.include_router(mo_router)
+    print("[OK] Manufacturing Order router connected")
+except Exception as e:
+    print(f"[ERROR] Manufacturing Order router: {e}")
