@@ -52,3 +52,4 @@ migrations/versions/*.py
 # Temporary
 *.tmp
 *.temp
+__pycache__/
