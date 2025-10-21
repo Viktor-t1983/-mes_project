@@ -54,3 +54,4 @@ migrations/versions/*.py
 *.temp
 __pycache__/
 .env
+.env
