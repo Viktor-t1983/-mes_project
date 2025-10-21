@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from src.database import get_db
+from src.core.database import get_db
 import psutil
 import os
 from datetime import datetime
